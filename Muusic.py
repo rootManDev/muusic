@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 
 """
-Copyright (c) 2019 Valentin B. // copyright (c) 2021 rootManDev - Fix errors , patch korean
-A simple music bot written in discord.py using youtube-dl.
-requirements:
-Python 3.5+
-pip install -U discord.py pynacl youtube-dl
-You have to put ffempeg.exe file in your work directory.
+Copyright (c) 2021 RootManDev.
+
+** Korean Remark **
+
+디스코드 음악 봇 입니다.
+
+요구사항 : 
+
+python 3.5+ 
+Discord.py
+Pynacl
+Youtube-dl
+ffempeg.exe
+
 """
 
 import asyncio
@@ -22,22 +30,18 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 
-# 불필요한 버그리포트를 무시하기 위한 설정입니다.
-
 youtube_dl.utils.bug_reports_message = lambda: ''
-
 
 class VoiceError(Exception):
     pass
 
-
 class YTDLError(Exception):
     pass
 
-
-# youtube-dl의 설정입니다. Youtube-dl은 음원 추출을 위한 모듈입니다.
-
 class YTDLSource(discord.PCMVolumeTransformer):
+    
+    # youtube-dl의 설정입니다. youtube-dl을 통해 음원을 가져옵니다.
+
     YTDL_OPTIONS = {
         'format': 'bestaudio/best',
         'extractaudio': True,
@@ -53,18 +57,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
         'default_search': 'ytsearch',
         'source_address': '0.0.0.0',
     }
-# FFMPEG의 설정입니다. FFMPEG는 오디오 코덱입니다.
 
     FFMPEG_OPTIONS = {
+        
+        # FFMPEG의 설정입니다. FFMPEG는 오디오 코덱입니다.
+
         'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
         'options': '-vn',
     }
-# yotube-dl에서 가져올 변수 목록입니다.
+
 
     ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
 
     def __init__(self, ctx: commands.Context, source: discord.FFmpegPCMAudio, *, data: dict, volume: float = 0.5):
         super().__init__(source, volume)
+
+        # Youtube-dl에서 가져올 변수 목록입니다.
 
         self.requester = ctx.author
         self.channel = ctx.channel
@@ -90,6 +98,8 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
     @classmethod
     async def create_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
+
+        # Play와 관련된 함수입니다.
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
@@ -129,8 +139,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         return cls(ctx, discord.FFmpegPCMAudio(info['url'], **cls.FFMPEG_OPTIONS), data=info)
 
+
     @classmethod
     async def search_source(self, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
+
+        # Search와 관련된 함수입니다.
 
         self.bot=bot
         channel = ctx.channel
@@ -194,10 +207,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         return rtrn
 
-# 가져온 영상의 길이를 시, 분, 초 단위로 나누는 작업이다.
-
     @staticmethod
     def parse_duration(duration: int):
+        
+        # 가져온 영상의 길이를 시, 분, 초 단위로 나누는 작업입니다.
+
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
@@ -214,7 +228,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
         return ' '.join(duration)
 
-
 class Song:
     __slots__ = ('source', 'requester')
 
@@ -223,6 +236,11 @@ class Song:
         self.requester = source.requester
 
     def create_embed(self): 
+
+        # 음악을 재생했을 때, 나오는 카드에 관한 함수입니다. 
+        # 이해가 잘 안될경우, 프로그램을 실행한 뒤 아무 노래나 재생해보시면 이해하실 수 있습니다.
+        # 디스코드는 위와 같은 카드를 'Embed'로 호출합니다.
+
         embed = (discord.Embed(title='현재 재생 중:',
                                description='```css\n{0.source.title}\n```'.format(self),
                                color=discord.Color.blurple())
@@ -233,8 +251,10 @@ class Song:
 
         return embed
 
-
 class SongQueue(asyncio.Queue):
+
+    # 재생목록에 관한 함수입니다.
+     
     def __getitem__(self, item):
         if isinstance(item, slice):
             return list(itertools.islice(self._queue, item.start, item.stop, item.step))
@@ -256,8 +276,10 @@ class SongQueue(asyncio.Queue):
     def remove(self, index: int):
         del self._queue[index]
 
-
 class VoiceState:
+    
+    # 음악봇의 음성과 관련된 클래스입니다.
+
     def __init__(self, bot: commands.Bot, ctx: commands.Context):
         self.bot = bot
         self._ctx = ctx
@@ -297,16 +319,18 @@ class VoiceState:
         return self.voice and self.current
 
     async def audio_player_task(self):
+         
         while True:
             self.next.clear()
 
             if self.loop == False:
 
-# 얼마의 시간동안 입력이 없으면 잠수에 들어갈건지를 설정합니다.
-# 기본 단위는 1초입니다.
-
                 try:
-                    async with timeout(600): # 10분
+                    async with timeout(600):
+                        
+                        # 얼마의 시간동안 입력이 없으면 잠수에 들어갈건지 설정하는 구간입니다.
+                        # 기본 단위는 1초입니다. 따라서 600은 10분입니다.
+
                         self.current = await self.songs.get()
                 except asyncio.TimeoutError:
                     self.bot.loop.create_task(self.stop())
@@ -340,8 +364,11 @@ class VoiceState:
             await self.voice.disconnect()
             self.voice = None
 
-
 class Music(commands.Cog):
+
+    # 명령어와 관련된 클래스입니다.
+    # 명령어를 추가할 때는 name인자 옆에 alises=[]를 입력하면 됩니다.
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.voice_states = {}
@@ -370,7 +397,7 @@ class Music(commands.Cog):
     async def cog_command_error(self, ctx: commands.Context, error: commands.CommandError):
         await ctx.send('오류가 발생했습니다 : {}'.format(str(error)))
 
-# 음성 채널에 입장합니다.
+    # 음성 채널에 입장하는 명령어입니다.
 
     @commands.command(name='join', invoke_without_subcommand=True)
     async def _join(self, ctx: commands.Context):
@@ -382,7 +409,7 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
 
-# 검색 명령어입니다. 
+    # 검색 명령어입니다. 
 
     @commands.command(name='검색',alises=['rjator','search'])
     async def _search(self, ctx: commands.Context, *, search: str):
@@ -407,8 +434,8 @@ class Music(commands.Cog):
                     await ctx.voice_state.songs.put(song)
                     await ctx.send('{}를 재생합니다!'.format(str(source)))
 
-# 봇을 음성 채널로 소환합니다.
-
+    # 봇을 음성채널로 소환하는 명령어입니다.          
+         
     @commands.command(name='소환')
     @commands.has_permissions(manage_guild=True)
     async def _summon(self, ctx: commands.Context, *, channel: discord.VoiceChannel = None):
@@ -423,6 +450,8 @@ class Music(commands.Cog):
 
         ctx.voice_state.voice = await destination.connect()
 
+    # 봇을 음성채널에서 내보내는 명령어입니다.
+
     @commands.command(name='나가', aliases=['disconnect','skrk','leave'])
     @commands.has_permissions(manage_guild=True)
     async def _leave(self, ctx: commands.Context):
@@ -433,8 +462,8 @@ class Music(commands.Cog):
 
         await ctx.voice_state.stop()
         del self.voice_states[ctx.guild.id]
-
-# 볼륨을 설정합니다.
+    
+    # 볼륨을 설정하는 명령어입니다.
 
     @commands.command(name='볼륨', aliases=['volume','v','qhffba','ㅍ'])
     async def _volume(self, ctx: commands.Context, *, volume: int):
@@ -449,15 +478,15 @@ class Music(commands.Cog):
         ctx.voice_state.current.source.volume = volume / 100
         ctx.voice_state.volume = volume /100
         await ctx.send('볼륨을 {}%로 설정했습니다.'.format(volume))
-
-# 현재 재생중인 음악을 나타냅니다.
+    
+    # 현재 재생중인 음악을 알려주는 명령어입니다.
 
     @commands.command(name='n', aliases=['현재', '재생중'])
     async def _now(self, ctx: commands.Context):
 
         await ctx.send(embed=ctx.voice_state.current.create_embed())
-
-# 재생 중인 음악을 일시정지 합니다.
+    
+    # 재생 중인 음악을 일시정지하는 명령어입니다.
 
     @commands.command(name='일시정지',aliases=['pause'])
     @commands.has_permissions(manage_guild=True)
@@ -467,8 +496,8 @@ class Music(commands.Cog):
         if ctx.voice_state.is_playing and ctx.voice_state.voice.is_playing():
             ctx.voice_state.voice.pause()
             await ctx.message.add_reaction('⏯')
-
-# 일시정지한 음악을 다시 재생합니다.
+    
+    # 일시정지한 음악을 다시 재생하는 명령어입니다.
 
     @commands.command(name='재개')
     @commands.has_permissions(manage_guild=True)
@@ -478,7 +507,7 @@ class Music(commands.Cog):
             ctx.voice_state.voice.resume()
             await ctx.message.add_reaction('⏯')
 
-# 음악을 정지합니다.
+    # 음악을 정지하는 명령어입니다.
 
     @commands.command(name='정지')
     @commands.has_permissions(manage_guild=True)
@@ -499,13 +528,13 @@ class Music(commands.Cog):
         if not ctx.voice_state.is_playing:
             return await ctx.send('음악 재생중이 아닙니다.')
 
-# 재생목록을 나타냅니다.
+    # 재생목록을 나타내는 명령어입니다.
 
     @commands.command(name='재생목록',aliases=['q','queue'])
     async def _queue(self, ctx: commands.Context, *, page: int = 1):
 
         if len(ctx.voice_state.songs) == 0:
-            return await ctx.send('재생 목록이 비었습니다.')
+            return await ctx.send('재생목록이 비었습니다.')
 
         items_per_page = 10
         pages = math.ceil(len(ctx.voice_state.songs) / items_per_page)
@@ -521,7 +550,7 @@ class Music(commands.Cog):
                  .set_footer(text='페이지 {}/{}'.format(page, pages)))
         await ctx.send(embed=embed)
 
-# 재생 목록을 섞습니다.
+    # 재생목록을 섞는 명령어입니다.
 
     @commands.command(name='섞기',aliases=['shuffle','셔플'])
     async def _shuffle(self, ctx: commands.Context):
@@ -533,6 +562,9 @@ class Music(commands.Cog):
         ctx.voice_state.songs.shuffle()
         await ctx.message.add_reaction('✅')
 
+    # 음악을 반복하는 명령어입니다.
+    # 명령어를 다시 입력하면 반복을 해제합니다.
+
     @commands.command(name='삭제',aliases=['remove'])
     async def _remove(self, ctx: commands.Context, index: int):
         
@@ -542,8 +574,6 @@ class Music(commands.Cog):
 
         ctx.voice_state.songs.remove(index - 1)
         await ctx.message.add_reaction('✅')
-
-# 음악을 반복합니다. 명령어를 다시 입력하면 반복을 해제합니다.
 
     @commands.command(name='반복',aliases=['loop','repeat'])
     async def _loop(self, ctx: commands.Context):
@@ -555,12 +585,10 @@ class Music(commands.Cog):
         ctx.voice_state.loop = not ctx.voice_state.loop
         await ctx.message.add_reaction('✅')
 
+    # 노래를 검색하여 가장 매칭되는 음악을 재생하는 명령어입니다.
+
     @commands.command(name='재생',aliases = ['p','play','wotod'])
     async def _play(self, ctx: commands.Context, *, search: str):
-
-# 노래를 검색하여 가장 매칭되는 음악을 재생합니다.
-# 노래를 검색하는 사이트 목록입니다. https://rg3.github.io/youtube-dl/supportedsites.html
-        
 
         if not ctx.voice_state.voice:
             await ctx.invoke(self._join)
@@ -576,21 +604,33 @@ class Music(commands.Cog):
                 await ctx.voice_state.songs.put(song)
                 await ctx.send('🎤{}를 재생합니다!'.format(str(source)))
 
-    @_join.before_invoke
-    @_play.before_invoke
-    async def ensure_voice_state(self, ctx: commands.Context):
-        if not ctx.author.voice or not ctx.author.voice.channel:
-            raise commands.CommandError('음성채널에 입장해주세요.')
+    # 명령어 도움말에 관련된 명령어입니다.
 
-        if ctx.voice_client:
-            if ctx.voice_client.channel != ctx.author.voice.channel:
-                raise commands.CommandError('봇이 이미 음성채널에 들어와있습니다.')
+    @commands.command(name='명령어',aliases = ['command','도움말'])
+    async def _help(self, ctx:commands.context):
+        embed=discord.Embed(title="명령어", description="모든 명령어는 ';'로 시작합니다.", color=0xec79de)
+        embed.add_field(name="join 소환", value="봇이 음성 채널로 입장합니다.", inline=False)
+        embed.add_field(name="재생 play wotod <음악 이름>", value="음악을 재생합니다.", inline=False)
+        embed.add_field(name="나가 disconnect skrk leave", value="봇이 음성 채널을 떠납니다.", inline=False)
+        embed.add_field(name="볼륨 qhffba v volume ;ㅍ", value="볼륨을 조절합니다.", inline=False)
+        embed.add_field(name="n 현재 재생중", value="현재 재생 중인 음악을 확인합니다.", inline=False)
+        embed.add_field(name="일시정지 pause", value="음악을 일시 정지합니다.", inline=False)
+        embed.add_field(name="정지", value="음악을 정지합니다.", inline=False)
+        embed.add_field(name="재개", value="음악을 다시 재생합니다.", inline=False)
+        embed.add_field(name="스킵 s skip tmzlq ㄴ", value="음악을 스킵합니다.", inline=False)
+        embed.add_field(name="재생목록 q queue", value="재생 목록을 보여줍니다.", inline=False)
+        embed.add_field(name="셔플 shuffle 섞기", value="재생 목록을 셔플합니다.", inline=False)
+        embed.add_field(name="삭제 remove", value=" 음악을 삭제합니다.", inline=False)
+        embed.add_field(name="반복 loop repeat", value="음악을 반복재생합니다.", inline=False)
+        embed.add_field(name="검색 search 검색 rjator", value=" 음악을 검색합니다.", inline=False)
+        await ctx.send(embed=embed)
 
-# 멜론차트를 가져옵니다.
-    
+    # 멜론차트를 불러오는 명령어입니다.
+    # 아직 미개발 된 영역입니다.
+
     @commands.command(name='멜론차트',aliases=['멜론','melon','apffhs'])
-    async def find_melon_chart(self, ctx: commands.Context,page: int = 1):
-        
+    async def find_melon_chart(self, ctx: commands.Context):
+    
         rankNumber = []
         chart = []
         
@@ -599,8 +639,6 @@ class Music(commands.Cog):
         html = req.text
         parse = BeautifulSoup(html, 'html.parser')
         
-        start = (page - 1) * 10
-        end = start + 10
         titles = parse.find_all("div", {"class": "ellipsis rank01"}) 
         singers = parse.find_all("div", {"class": "ellipsis rank02"}) 
         
@@ -628,63 +666,66 @@ class Music(commands.Cog):
         for ranking in range(10,20):
             page2.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
             page2.set_footer(text="페이지 2/10")
+
         
         pages = [page1, page2]
 
-        message = await ctx.send(embed = page1)
+        left = '◀'
+        right = '▶'     
 
-        await message.add_reaction('⏮')
-        await message.add_reaction('◀')
-        await message.add_reaction('▶')
-        await message.add_reaction('⏭')
+        def predicate(message, l, r):
+            def check(reaction, user):
+                if reaction.message.id != message.id or user == bot.user:
+                    return False
+                if l and reaction.emoji == left:
+                    return True
+                if r and reaction.emoji == right:
+                    return True
+                return False
+            return check
 
-        i = 0
-        reaction = None
+        @bot.command(pass_context=True)
+        async def series(ctx):
+            index = 0
+            pg = None
+            action = ctx.send
+            while True:
+                await ctx.send(content=pages[0])
 
-        while True:
-            if str(reaction) == '⏮':
-                i = 0
-                await message.edit(embed = pages[i])
-            elif str(reaction) == '◀':
-                if i > 0:
-                    i -= 1
-                    await message.edit(embed = pages[i])
-            elif str(reaction) == '▶':
-                if i < 2:
-                    i += 1
-                    await message.edit(embed = pages[i])
-            elif str(reaction) == '⏭':
-                i = 2
-                await message.edit(embed = pages[i])
-            try:
-                reaction, user = await client.wait_for('reaction_add', timeout = 3, check = check)
-                await message.remove_reaction(reaction, user)
-            except:
-                break
+                res = await ctx.send(content=pages[index])
+                if res is not None:
+                    pg = res
 
-# 도움말 관련된 명령어입니다.
+                l = index != 0
+                r - index != len(pages) - 1
+                if reaction.emoji == left:
+                    await pg.add_reaction(left)
+                if reaction.emoji == right:
+                    await pg.add_reaction(right)
 
-    @commands.command(name='명령어')
-    async def _help(self, ctx:commands.context):
-        embed=discord.Embed(title="명령어", description="모든 명령어는 ';'로 시작합니다.", color=0xec79de)
-        embed.add_field(name="join 소환", value="봇이 음성 채널로 입장합니다.", inline=False)
-        embed.add_field(name="재생 play wotod <음악 이름>", value="음악을 재생합니다.", inline=False)
-        embed.add_field(name="나가 disconnect skrk leave", value="봇이 음성 채널을 떠납니다.", inline=False)
-        embed.add_field(name="볼륨 qhffba v volume ;ㅍ", value="볼륨을 조절합니다.", inline=False)
-        embed.add_field(name="n 현재 재생중", value="현재 재생 중인 음악을 확인합니다.", inline=False)
-        embed.add_field(name="일시정지 pause", value="음악을 일시 정지합니다.", inline=False)
-        embed.add_field(name="정지", value="음악을 정지합니다.", inline=False)
-        embed.add_field(name="재개", value="음악을 다시 재생합니다.", inline=False)
-        embed.add_field(name="스킵 s skip tmzlq ㄴ", value="음악을 스킵합니다.", inline=False)
-        embed.add_field(name="재생목록 q queue", value="재생 목록을 보여줍니다.", inline=False)
-        embed.add_field(name="셔플 shuffle 섞기", value="재생 목록을 셔플합니다.", inline=False)
-        embed.add_field(name="삭제 remove", value=" 음악을 삭제합니다.", inline=False)
-        embed.add_field(name="반복 loop repeat", value="음악을 반복재생합니다.", inline=False)
-        embed.add_field(name="검색 search 검색 rjator", value=" 음악을 검색합니다.", inline=False)
-        await ctx.send(embed=embed)
+                react, user = await bot.wait_for('reaction_add', check=predicate(pg, l, r))
+                if react.emoji == left:
+                        index -= 1
+                elif react.emoji == right:
+                    index += 1
+                action = pg.edit
 
 
-bot = commands.Bot(';', description='Yet another music bot.')
+
+    # 봇의 음성채널 존재 유무에 관한 경고입니다.
+
+    @_join.before_invoke
+    @_play.before_invoke
+    async def ensure_voice_state(self, ctx: commands.Context):
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            raise commands.CommandError('음성채널에 입장해주세요.')
+
+        if ctx.voice_client:
+            if ctx.voice_client.channel != ctx.author.voice.channel:
+                raise commands.CommandError('봇이 이미 음성채널에 들어와있습니다.')
+
+
+bot = commands.Bot(';', description='디스코드 음악 봇 무직입니다.')
 bot.add_cog(Music(bot))
 
 
