@@ -732,5 +732,6 @@ bot.add_cog(Music(bot))
 @bot.event
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
-
-bot.run('ODAxNzgwNjUxMTc4NDU5MTg2.YAlqaw.m5o3XVyu8CDFKb--yHcjFlTrFSg')
+                       
+# Token 위치에는 봇의 토큰이 들어갑니다.
+bot.run('Token')
