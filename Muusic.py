@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 """
@@ -30,7 +31,32 @@ import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 
+rankNumber = []
+chart = []
+header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'}
+req = requests.get('https://www.melon.com/chart/week/index.htm', headers = header) 
+html = req.text
+parse = BeautifulSoup(html, 'html.parser')
+      
+titles = parse.find_all("div", {"class": "ellipsis rank01"}) 
+singers = parse.find_all("div", {"class": "ellipsis rank02"}) 
+       
+title = []
+singer = []
+
+for t in titles:
+    title.append(t.find('a').text)
+       
+for s in singers:
+    singer.append(s.find('span', {"class": "checkEllipsis"}).text)      
+
+for ranking in range(50):
+    chart.append('%s - %s\n'%(title[ranking], singer[ranking]))
+    rankNumber.append('%d위'%(ranking+1))
+
+
 youtube_dl.utils.bug_reports_message = lambda: ''
+
 
 class VoiceError(Exception):
     pass
@@ -326,7 +352,7 @@ class VoiceState:
             if self.loop == False:
 
                 try:
-                    async with timeout(600):
+                    async with timeout(6000):
                         
                         # 얼마의 시간동안 입력이 없으면 잠수에 들어갈건지 설정하는 구간입니다.
                         # 기본 단위는 1초입니다. 따라서 600은 10분입니다.
@@ -602,115 +628,94 @@ class Music(commands.Cog):
                 song = Song(source)
 
                 await ctx.voice_state.songs.put(song)
-                await ctx.send('🎤{}를 재생합니다!'.format(str(source)))
+                await ctx.send('🎵{}를 재생합니다!'.format(str(source)))
 
     # 명령어 도움말에 관련된 명령어입니다.
 
     @commands.command(name='명령어',aliases = ['command','도움말'])
     async def _help(self, ctx:commands.context):
         embed=discord.Embed(title="명령어", description="모든 명령어는 ';'로 시작합니다.", color=0xec79de)
-        embed.add_field(name="join 소환", value="봇이 음성 채널로 입장합니다.", inline=False)
-        embed.add_field(name="재생 play wotod <음악 이름>", value="음악을 재생합니다.", inline=False)
-        embed.add_field(name="나가 disconnect skrk leave", value="봇이 음성 채널을 떠납니다.", inline=False)
-        embed.add_field(name="볼륨 qhffba v volume ;ㅍ", value="볼륨을 조절합니다.", inline=False)
-        embed.add_field(name="n 현재 재생중", value="현재 재생 중인 음악을 확인합니다.", inline=False)
-        embed.add_field(name="일시정지 pause", value="음악을 일시 정지합니다.", inline=False)
+        embed.add_field(name="join / 소환", value="봇이 음성 채널로 입장합니다.", inline=False)
+        embed.add_field(name="재생 / play wotod <음악 이름>", value="음악을 재생합니다.", inline=False)
+        embed.add_field(name="나가 / disconnect / skrk / leave", value="봇이 음성 채널을 떠납니다.", inline=False)
+        embed.add_field(name="볼륨 / qhffba / v / volume / ;ㅍ", value="볼륨을 조절합니다.", inline=False)
+        embed.add_field(name="n / 현재 재생중", value="현재 재생 중인 음악을 확인합니다.", inline=False)
+        embed.add_field(name="일시정지 / pause", value="음악을 일시 정지합니다.", inline=False)
         embed.add_field(name="정지", value="음악을 정지합니다.", inline=False)
         embed.add_field(name="재개", value="음악을 다시 재생합니다.", inline=False)
-        embed.add_field(name="스킵 s skip tmzlq ㄴ", value="음악을 스킵합니다.", inline=False)
-        embed.add_field(name="재생목록 q queue", value="재생 목록을 보여줍니다.", inline=False)
-        embed.add_field(name="셔플 shuffle 섞기", value="재생 목록을 셔플합니다.", inline=False)
-        embed.add_field(name="삭제 remove", value=" 음악을 삭제합니다.", inline=False)
-        embed.add_field(name="반복 loop repeat", value="음악을 반복재생합니다.", inline=False)
-        embed.add_field(name="검색 search 검색 rjator", value=" 음악을 검색합니다.", inline=False)
+        embed.add_field(name="스킵 / s / skip / tmzlq / ㄴ", value="음악을 스킵합니다.", inline=False)
+        embed.add_field(name="재생목록 / q / queue", value="재생 목록을 보여줍니다.", inline=False)
+        embed.add_field(name="셔플 / shuffle / 섞기", value="재생 목록을 셔플합니다.", inline=False)
+        embed.add_field(name="삭제 / remove", value=" 음악을 삭제합니다.", inline=False)
+        embed.add_field(name="반복 / loop / repeat", value="음악을 반복재생합니다.", inline=False)
+        embed.add_field(name="검색 / search / 검색 / rjator", value=" 음악을 검색합니다.", inline=False)
+        embed.add_field(name="멜론차트 / 멜론 / melon" ,value="멜론차트를 검색합니다.멜론차트(숫자)로 페이지를 넘길 수 있습니다.",inline=False)
         await ctx.send(embed=embed)
 
     # 멜론차트를 불러오는 명령어입니다.
-    # 아직 미개발 된 영역입니다.
+    # 50등까지 가져옵니다.
 
     @commands.command(name='멜론차트',aliases=['멜론','melon','apffhs'])
-    async def find_melon_chart(self, ctx: commands.Context):
-    
-        rankNumber = []
-        chart = []
-        
-        header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'}
-        req = requests.get('https://www.melon.com/chart/week/index.htm', headers = header) 
-        html = req.text
-        parse = BeautifulSoup(html, 'html.parser')
-        
-        titles = parse.find_all("div", {"class": "ellipsis rank01"}) 
-        singers = parse.find_all("div", {"class": "ellipsis rank02"}) 
-        
-        title = []
-        singer = []
+    async def melon1(self, ctx: commands.Context):
 
-        for t in titles:
-            title.append(t.find('a').text)
-
-        for s in singers:
-            singer.append(s.find('span', {"class": "checkEllipsis"}).text)      
-
-        for ranking in range(20):
-            chart.append('%s - %s\n'%(title[ranking], singer[ranking]))
-            rankNumber.append('%d위'%(ranking+1))
-             
+        ranking = 0   
         page1 = discord.Embed(title = "멜론차트🏆️", description ="", color=0x58FA58)
         page1.set_thumbnail(url="https://ww.namu.la/s/02ccf2ac9d3d90e3175520e9cab55359b5afa9a05d36aea5002ec0206271b4700da4dc3c9b3ff0f768913d4bcb440cd9477617e1942571b7e43d89956b3f404302249ff67251b7b3e0266d0e87cd088e508fae4429335500f42c4bad0c2f333a")
         for ranking in range(10):
             page1.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
-            page1.set_footer(text='페이지 1/10')
-        
+            page1.set_footer(text='페이지 1/5')
+        await ctx.send(embed=page1)
+ 
+    @commands.command(name='멜론2',aliases=['멜론차트2','melon2'])
+    async def melon2(self, ctx: commands.Context):
+
+        ranking = 0
         page2 = discord.Embed(title = "멜론차트🏆️", description ="", color=0x58FA58)
         page2.set_thumbnail(url="https://ww.namu.la/s/02ccf2ac9d3d90e3175520e9cab55359b5afa9a05d36aea5002ec0206271b4700da4dc3c9b3ff0f768913d4bcb440cd9477617e1942571b7e43d89956b3f404302249ff67251b7b3e0266d0e87cd088e508fae4429335500f42c4bad0c2f333a")
         for ranking in range(10,20):
             page2.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
-            page2.set_footer(text="페이지 2/10")
+            page2.set_footer(text="페이지 2/5")       
+        await ctx.send(embed=page2)
+    
+    @commands.command(name='멜론3',aliases=['apffhs3','멜론차트3','melon3'])
+    async def melon3(self,ctx: commands.Context):
+        ranking = 0
+        page3 = discord.Embed(title = "멜론차트🏆️", description ="", color=0x58FA58)
+        page3.set_thumbnail(url="https://ww.namu.la/s/02ccf2ac9d3d90e3175520e9cab55359b5afa9a05d36aea5002ec0206271b4700da4dc3c9b3ff0f768913d4bcb440cd9477617e1942571b7e43d89956b3f404302249ff67251b7b3e0266d0e87cd088e508fae4429335500f42c4bad0c2f333a")
+        for ranking in range(20,30):
+            page3.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
+            page3.set_footer(text="페이지 3/5")
+        await ctx.send(embed=page3)
 
-        
-        pages = [page1, page2]
+    @commands.command(name='멜론4', aliases=['melon4','apffhs4','멜론차트4'])
+    async def melon4(self, ctx:commands.Context):
+        ranking = 0
+        page4 = discord.Embed(title = "멜론차트🏆️", description ="", color=0x58FA58)
+        page4.set_thumbnail(url="https://ww.namu.la/s/02ccf2ac9d3d90e3175520e9cab55359b5afa9a05d36aea5002ec0206271b4700da4dc3c9b3ff0f768913d4bcb440cd9477617e1942571b7e43d89956b3f404302249ff67251b7b3e0266d0e87cd088e508fae4429335500f42c4bad0c2f333a")
+        for ranking in range(30,40):
+            page4.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
+            page4.set_footer(text="페이지 4/5")
+        await ctx.send(embed=page4)
 
-        left = '◀'
-        right = '▶'     
+    @commands.command(name='멜론5', aliases=['melon5','apffhs5','멜론차트5'])
+    async def melon5(self, ctx:commands.Context):
+        ranking = 0
+        page5 = discord.Embed(title = "멜론차트🏆️", description ="", color=0x58FA58)
+        page5.set_thumbnail(url="https://ww.namu.la/s/02ccf2ac9d3d90e3175520e9cab55359b5afa9a05d36aea5002ec0206271b4700da4dc3c9b3ff0f768913d4bcb440cd9477617e1942571b7e43d89956b3f404302249ff67251b7b3e0266d0e87cd088e508fae4429335500f42c4bad0c2f333a")
+        for ranking in range(40,50):
+            page5.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
+            page5.set_footer(text="페이지 5/5")
+        await ctx.send(embed=page5)
+    '''
+    @commands.command(name='test')
+    async def test(self, ctx:commands.Context, *, search:str):
 
-        def predicate(message, l, r):
-            def check(reaction, user):
-                if reaction.message.id != message.id or user == bot.user:
-                    return False
-                if l and reaction.emoji == left:
-                    return True
-                if r and reaction.emoji == right:
-                    return True
-                return False
-            return check
+        async with ctx.typing():
+            source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
 
-        @bot.command(pass_context=True)
-        async def series(ctx):
-            index = 0
-            pg = None
-            action = ctx.send
-            while True:
-                await ctx.send(content=pages[0])
-
-                res = await ctx.send(content=pages[index])
-                if res is not None:
-                    pg = res
-
-                l = index != 0
-                r - index != len(pages) - 1
-                if reaction.emoji == left:
-                    await pg.add_reaction(left)
-                if reaction.emoji == right:
-                    await pg.add_reaction(right)
-
-                react, user = await bot.wait_for('reaction_add', check=predicate(pg, l, r))
-                if react.emoji == left:
-                        index -= 1
-                elif react.emoji == right:
-                    index += 1
-                action = pg.edit
-
-
+        song = Song(source)
+        await ctx.voice_state.songs.put(song)
+    '''
 
     # 봇의 음성채널 존재 유무에 관한 경고입니다.
 
@@ -733,4 +738,4 @@ bot.add_cog(Music(bot))
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
 
-bot.run('ODAxNzgwNjUxMTc4NDU5MTg2.YAlqaw.m5o3XVyu8CDFKb--yHcjFlTrFSg')
+bot.run('Nzk5OTM0NjczMTc0MjY1ODU2.YAKzOA.ghAAaduySST8NpL1DIWtjjD2e58')
