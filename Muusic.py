@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 
 """
@@ -655,7 +656,7 @@ class Music(commands.Cog):
     # 50등까지 가져옵니다.
 
     @commands.command(name='멜론차트',aliases=['멜론','melon','apffhs'])
-    async def find_melon_chart(self, ctx: commands.Context):
+    async def melon1(self, ctx: commands.Context):
 
         ranking = 0   
         page1 = discord.Embed(title = "멜론차트🏆️", description ="", color=0x58FA58)
@@ -705,8 +706,16 @@ class Music(commands.Cog):
             page5.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
             page5.set_footer(text="페이지 5/5")
         await ctx.send(embed=page5)
+    '''
+    @commands.command(name='test')
+    async def test(self, ctx:commands.Context, *, search:str):
 
+        async with ctx.typing():
+            source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
 
+        song = Song(source)
+        await ctx.voice_state.songs.put(song)
+    '''
 
     # 봇의 음성채널 존재 유무에 관한 경고입니다.
 
@@ -729,4 +738,4 @@ bot.add_cog(Music(bot))
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
 
-bot.run('Token')
+bot.run('Nzk5OTM0NjczMTc0MjY1ODU2.YAKzOA.ghAAaduySST8NpL1DIWtjjD2e58')
