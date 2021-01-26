@@ -86,7 +86,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
     FFMPEG_OPTIONS = {
         
-        # FFMPEG의 설정입니다. FFMPEG는 오디오 코덱입니다.
+        # FFMPEG의 설정입니다.
 
         'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
         'options': '-vn',
