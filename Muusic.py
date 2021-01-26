@@ -706,16 +706,6 @@ class Music(commands.Cog):
             page5.add_field(name=rankNumber[ranking],value=chart[ranking],inline=False)
             page5.set_footer(text="페이지 5/5")
         await ctx.send(embed=page5)
-    '''
-    @commands.command(name='test')
-    async def test(self, ctx:commands.Context, *, search:str):
-
-        async with ctx.typing():
-            source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
-
-        song = Song(source)
-        await ctx.voice_state.songs.put(song)
-    '''
 
     # 봇의 음성채널 존재 유무에 관한 경고입니다.
 
