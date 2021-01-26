@@ -613,7 +613,7 @@ class Music(commands.Cog):
 
     # 노래를 검색하여 가장 매칭되는 음악을 재생하는 명령어입니다.
 
-    @commands.command(name='재생',aliases = ['p','play','wotod'])
+    @commands.command(name='재생',aliases = ['p','play','wotod','ㅔ'])
     async def _play(self, ctx: commands.Context, *, search: str):
 
         if not ctx.voice_state.voice:
@@ -636,7 +636,7 @@ class Music(commands.Cog):
     async def _help(self, ctx:commands.context):
         embed=discord.Embed(title="명령어", description="모든 명령어는 ';'로 시작합니다.", color=0xec79de)
         embed.add_field(name="join / 소환", value="봇이 음성 채널로 입장합니다.", inline=False)
-        embed.add_field(name="재생 / play wotod <음악 이름>", value="음악을 재생합니다.", inline=False)
+        embed.add_field(name="재생 / play / wotod / p / ㅔ <음악 이름>", value="음악을 재생합니다.", inline=False)
         embed.add_field(name="나가 / disconnect / skrk / leave", value="봇이 음성 채널을 떠납니다.", inline=False)
         embed.add_field(name="볼륨 / qhffba / v / volume / ;ㅍ", value="볼륨을 조절합니다.", inline=False)
         embed.add_field(name="n / 현재 재생중", value="현재 재생 중인 음악을 확인합니다.", inline=False)
