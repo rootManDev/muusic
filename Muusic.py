@@ -446,7 +446,7 @@ class Music(commands.Cog):
                 await ctx.send('명령을 수행 중 오류가 발생했습니다 : {}'.format(str(e)))
             else:
                 if source == 'sel_invalid':
-                    await ctx.send('Invalid selection')
+                    await ctx.send('검색을 취소하셨습니다.')
                 elif source == 'cancel':
                     await ctx.send(':white_check_mark:')
                 elif source == 'timeout':
