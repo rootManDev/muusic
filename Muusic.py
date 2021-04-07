@@ -1,20 +1,14 @@
-
 # -*- coding: utf-8 -*-
 
 """
-
 ** Korean Remark **
-
-디스코드 음악 봇 입니다.
-
+디스코드 무직 봇 입니다.
 요구사항 : 
-
 python 3.5+ 
 Discord.py
 Pynacl
 Youtube-dl
 ffempeg.exe
-
 """
 
 import asyncio
@@ -23,8 +17,11 @@ import itertools
 import math
 import random
 import requests
+import urllib
+import bs4
+import time
 from bs4 import BeautifulSoup
-
+from urllib.request import urlopen, Request
 import discord
 import youtube_dl
 from async_timeout import timeout
@@ -53,6 +50,21 @@ for ranking in range(50):
     chart.append('%s - %s\n'%(title[ranking], singer[ranking]))
     rankNumber.append('%d위'%(ranking+1))
 
+####################################  날씨 구하기 ##########################################
+########################################################################################
+
+weatherUrl = 'https://weather.naver.com/today/02190109'
+
+weatherReq = Request(weatherUrl)
+weatherPage = urlopen(weatherReq)
+weatherHtml = weatherPage.read()
+weatherSoup= bs4.BeautifulSoup(weatherHtml,'html5lib')
+weatherInfo = (weatherSoup.find('p', class_='summary').find('span', class_='weather before_slash').text)
+
+###################################### 주식 ##############################################
+########################################################################################
+
+jammin = 0
 
 youtube_dl.utils.bug_reports_message = lambda: ''
 
@@ -649,6 +661,10 @@ class Music(commands.Cog):
         embed.add_field(name="반복 / loop / repeat", value="음악을 반복재생합니다.", inline=False)
         embed.add_field(name="검색 / search / 검색 / rjator", value=" 음악을 검색합니다.", inline=False)
         embed.add_field(name="멜론차트 / 멜론 / melon" ,value="멜론차트를 검색합니다.멜론차트(숫자)로 페이지를 넘길 수 있습니다.",inline=False)
+        embed.add_field(name="안녕 / 반가워 / 무직 / 하이" ,value="무직이와 인사합니다",inline=False)
+        embed.add_field(name="날씨 / weather" ,value="무직이가 날씨를 알려줍니다",inline=False)
+    
+
         await ctx.send(embed=embed)
 
     # 멜론차트를 불러오는 명령어입니다.
@@ -718,13 +734,61 @@ class Music(commands.Cog):
             if ctx.voice_client.channel != ctx.author.voice.channel:
                 raise commands.CommandError('봇이 이미 음성채널에 들어와있습니다.')
 
+##########################################################################
+##########################################################################
 
-bot = commands.Bot(';', description='디스코드 음악 봇 무직입니다.')
+    @commands.command(name='안녕', aliases=['반가워','무직','하이','hello','hi','헬로'])
+    async def hello(self, ctx:commands.Context):
+        
+        tm = time.localtime(time.time())
+        if (tm.tm_hour<6):
+            helloList = ['언제나 준비되어있습니다','무엇을 찾으시나요','저 아직 안잡니다','반갑습니다']
+
+        elif (tm.tm_hour<12 and weatherInfo=='맑음'):
+            helloList=['좋은 아침입니다','부지런하시네요','좋은 날씨에 좋은 아침입니다']
+
+        elif (tm.tm_hour<12):
+            helloList=['좋은 아침입니다','부지런하시네요']
+
+        elif (tm.tm_hour<18):
+            helloList=['좋은 오후입니다','점심은 드셨나요?','반갑습니다','반가워요','무엇을 찾으시나요','언제나 준비되어있습니다']
+
+        elif (tm.tm_hour<24):
+            helloList=['저녁은 드셨나요?','좋은 저녁입니다','반갑습니다','반가워요','무엇을 찾으시나요','언제나 준비되어있습니다']
+
+        else:
+            helloList=['약간의 오류가 생긴 것 같습니다']
+
+        helloRandom = random.randrange(0,len(helloList))
+        answer = helloList[helloRandom]
+
+        await ctx.send(answer)
+
+##########################################################################
+##########################################################################
+
+    @commands.command(name='날씨', aliases=['weather','skfTl'])
+    async def weatherSend(self, ctx:commands.Context):
+        embed=discord.Embed(title="오늘의 날씨", description="무직이가 날씨를 알려드립니다.",color=0x00c7fc)
+        embed.add_field(name="날씨", value=weatherInfo, inline=True)
+        embed.set_footer(text="by Naver")
+        await ctx.send(embed=embed)
+
+##########################################################################
+##########################################################################
+
+    @commands.command(name='주식', alises=['stock'])
+    async def stock(self, ctx:commands.Context):
+
+bot = commands.Bot('%', description='디스코드 음악 봇 무직입니다.')
 bot.add_cog(Music(bot))
 
 
 @bot.event
 async def on_ready():
     print('Logged in as:\n{0.user.name}\n{0.user.id}'.format(bot))
+    await bot.change_presence(activity=discord.Game(name='"아 X발 일하고싶다"라고'))
+
+
 
 bot.run('Token')
