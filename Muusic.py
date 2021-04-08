@@ -9,24 +9,17 @@ Discord.py
 Pynacl
 Youtube-dl
 ffempeg.exe
+bs4
 """
-
-import asyncio
-import functools
-import itertools
-import math
-import random
-import requests
-import urllib
-import bs4
-import time
+import os, sys, json, asyncio, functools, itertools, math, random, time, discord
+import requests, urllib, bs4, youtube_dl
 from bs4 import BeautifulSoup
 from urllib.request import urlopen, Request
-import discord
-import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
 
+client_id = "client id" 
+client_secret = "client secret"
 rankNumber = []
 chart = []
 header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko'}
@@ -663,7 +656,10 @@ class Music(commands.Cog):
         embed.add_field(name="멜론차트 / 멜론 / melon" ,value="멜론차트를 검색합니다.멜론차트(숫자)로 페이지를 넘길 수 있습니다.",inline=False)
         embed.add_field(name="안녕 / 반가워 / 무직 / 하이" ,value="무직이와 인사합니다",inline=False)
         embed.add_field(name="날씨 / weather" ,value="무직이가 날씨를 알려줍니다",inline=False)
-    
+        embed.add_field(name="한영" ,value="한영 번역을 해줍니다",inline=False)
+        embed.add_field(name="영한" ,value="영한 번역을 해줍니다",inline=False)
+        embed.add_field(name="일한" ,value="일한 번역을 해줍니다",inline=False)
+        embed.add_field(name="한일" ,value="한일 번역을 해줍니다",inline=False)     
 
         await ctx.send(embed=embed)
 
@@ -777,10 +773,109 @@ class Music(commands.Cog):
 ##########################################################################
 ##########################################################################
 
-    @commands.command(name='주식', alises=['stock'])
-    async def stock(self, ctx:commands.Context):
+    @commands.command(name='한영')
+    async def translatekE(self, ctx:commands.Context):
 
-bot = commands.Bot('%', description='디스코드 음악 봇 무직입니다.')
+        origin_text = ctx.message.content[3:]
+        encText = urllib.parse.quote(origin_text)
+        data = "source=ko&target=en&text=" + encText
+        url = "https://openapi.naver.com/v1/papago/n2mt"
+        request = urllib.request.Request(url)
+        request.add_header("X-Naver-Client-Id",client_id)
+        request.add_header("X-Naver-Client-Secret",client_secret)
+        response = urllib.request.urlopen(request, data=data.encode("utf-8"))
+        rescode = response.getcode()
+
+        if(rescode==200):
+            response_body = response.read()
+            res = json.loads(response_body.decode('utf-8'))
+            embed=discord.Embed(title="무직 번역기", color=0x53d5fd)
+            embed.set_thumbnail(url="https://lh3.googleusercontent.com/proxy/PL6IEOtTArm-DL9lFgE8_oOqZhDoo-_FSYpHmqEyyr8drysmD7inM0U3npZlUUzySMPbkuH3BjalqNxPuBGFcQfLvjGMzLYQga6zACKuln2iyFdCAAom-B46RamIRjosfajWYSincUBPY6uapOohMrM5u2WP5PCDjivk7qfcFWHDcAFcEMHhKYPIsBU-JQMpPEDmJ6u3ziYSwdPE11KS9tbygrKpQ8oUcf0W6eZotzVPuEkQ8eqZiLzvIBQ-57HzaJh-Jout0EJqHNMMz1T1DHI-QogqXfCownB0j6j7IsIpSeIHGN4")
+            embed.add_field(name="한국어", value=origin_text, inline=False)
+            embed.add_field(name="영어", value=res['message']['result']['translatedText'], inline=True)
+            embed.set_footer(text="API provided by Naver Open API")
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("잘못 입력하셨습니다. 다시 입력해주시길 바랍니다.")
+
+    @commands.command(name='영한')
+    async def translateEK(self, ctx:commands.Context):
+
+        origin_text = ctx.message.content[3:]
+        encText = urllib.parse.quote(origin_text)
+        data = "source=en&target=ko&text=" + encText
+        url = "https://openapi.naver.com/v1/papago/n2mt"
+        request = urllib.request.Request(url)
+        request.add_header("X-Naver-Client-Id",client_id)
+        request.add_header("X-Naver-Client-Secret",client_secret)
+        response = urllib.request.urlopen(request, data=data.encode("utf-8"))
+        rescode = response.getcode()
+
+        if(rescode==200):
+            response_body = response.read()
+            res = json.loads(response_body.decode('utf-8'))
+            embed=discord.Embed(title="무직 번역기", color=0x53d5fd)
+            embed.set_thumbnail(url="https://lh3.googleusercontent.com/proxy/PL6IEOtTArm-DL9lFgE8_oOqZhDoo-_FSYpHmqEyyr8drysmD7inM0U3npZlUUzySMPbkuH3BjalqNxPuBGFcQfLvjGMzLYQga6zACKuln2iyFdCAAom-B46RamIRjosfajWYSincUBPY6uapOohMrM5u2WP5PCDjivk7qfcFWHDcAFcEMHhKYPIsBU-JQMpPEDmJ6u3ziYSwdPE11KS9tbygrKpQ8oUcf0W6eZotzVPuEkQ8eqZiLzvIBQ-57HzaJh-Jout0EJqHNMMz1T1DHI-QogqXfCownB0j6j7IsIpSeIHGN4")
+            embed.add_field(name="영어", value=origin_text, inline=False)
+            embed.add_field(name="한국어", value=res['message']['result']['translatedText'], inline=True)
+            embed.set_footer(text="API provided by Naver Open API")
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("잘못 입력하셨습니다. 다시 입력해주시길 바랍니다.")
+
+    @commands.command(name='한일')
+    async def translateKJ(self, ctx:commands.Context):
+
+
+        origin_text = ctx.message.content[3:]
+        encText = urllib.parse.quote(origin_text)
+        data = "source=ko&target=ja&text=" + encText
+        url = "https://openapi.naver.com/v1/papago/n2mt"
+        request = urllib.request.Request(url)
+        request.add_header("X-Naver-Client-Id",client_id)
+        request.add_header("X-Naver-Client-Secret",client_secret)
+        response = urllib.request.urlopen(request, data=data.encode("utf-8"))
+        rescode = response.getcode()
+
+        if(rescode==200):
+            response_body = response.read()
+            res = json.loads(response_body.decode('utf-8'))
+            embed=discord.Embed(title="무직 번역기", color=0x53d5fd)
+            embed.set_thumbnail(url="https://lh3.googleusercontent.com/proxy/PL6IEOtTArm-DL9lFgE8_oOqZhDoo-_FSYpHmqEyyr8drysmD7inM0U3npZlUUzySMPbkuH3BjalqNxPuBGFcQfLvjGMzLYQga6zACKuln2iyFdCAAom-B46RamIRjosfajWYSincUBPY6uapOohMrM5u2WP5PCDjivk7qfcFWHDcAFcEMHhKYPIsBU-JQMpPEDmJ6u3ziYSwdPE11KS9tbygrKpQ8oUcf0W6eZotzVPuEkQ8eqZiLzvIBQ-57HzaJh-Jout0EJqHNMMz1T1DHI-QogqXfCownB0j6j7IsIpSeIHGN4")
+            embed.add_field(name="한국어", value=origin_text, inline=False)
+            embed.add_field(name="일본어", value=res['message']['result']['translatedText'], inline=True)
+            embed.set_footer(text="API provided by Naver Open API")
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("잘못 입력하셨습니다. 다시 입력해주시길 바랍니다.")
+
+    @commands.command(name='일한')
+    async def translateJK(self, ctx:commands.Context):
+
+        origin_text = ctx.message.content[3:]
+        encText = urllib.parse.quote(origin_text)
+        data = "source=ja&target=ko&text=" + encText
+        url = "https://openapi.naver.com/v1/papago/n2mt"
+        request = urllib.request.Request(url)
+        request.add_header("X-Naver-Client-Id",client_id)
+        request.add_header("X-Naver-Client-Secret",client_secret)
+        response = urllib.request.urlopen(request, data=data.encode("utf-8"))
+        rescode = response.getcode()
+
+        if(rescode==200):
+            response_body = response.read()
+            res = json.loads(response_body.decode('utf-8'))
+            embed=discord.Embed(title="무직 번역기", color=0x53d5fd)
+            embed.set_thumbnail(url="https://lh3.googleusercontent.com/proxy/PL6IEOtTArm-DL9lFgE8_oOqZhDoo-_FSYpHmqEyyr8drysmD7inM0U3npZlUUzySMPbkuH3BjalqNxPuBGFcQfLvjGMzLYQga6zACKuln2iyFdCAAom-B46RamIRjosfajWYSincUBPY6uapOohMrM5u2WP5PCDjivk7qfcFWHDcAFcEMHhKYPIsBU-JQMpPEDmJ6u3ziYSwdPE11KS9tbygrKpQ8oUcf0W6eZotzVPuEkQ8eqZiLzvIBQ-57HzaJh-Jout0EJqHNMMz1T1DHI-QogqXfCownB0j6j7IsIpSeIHGN4")
+            embed.add_field(name="일본어", value=origin_text, inline=False)
+            embed.add_field(name="한국어", value=res['message']['result']['translatedText'], inline=True)
+            embed.set_footer(text="API provided by Naver Open API")
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("잘못 입력하셨습니다. 다시 입력해주시길 바랍니다.")
+
+
+bot = commands.Bot(';', description='디스코드 음악 봇 무직입니다.')
 bot.add_cog(Music(bot))
 
 
