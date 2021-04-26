@@ -8,7 +8,7 @@ python 3.5+
 Discord.py
 Pynacl
 Youtube-dl
-ffempeg.exe
+ffmpeg.exe
 bs4
 """
 import os, sys, json, asyncio, functools, itertools, math, random, time, discord
